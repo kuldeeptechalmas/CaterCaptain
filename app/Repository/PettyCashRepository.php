@@ -7,10 +7,35 @@ use App\Models\PettyCashSpends;
 use App\Repository\Interface\PettyCashInterface;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Request;
 
 class PettyCashRepository implements PettyCashInterface
 {
+
+    public function pettyCashDashboard(Request $request)
+    {
+        try {
+            $totalIssue = DB::table('petty_cash_issues')
+                ->whereNull('deleted_at')
+                ->sum('amount');
+
+            $totalSpend = DB::table('petty_cash_spends')
+                ->whereNull('deleted_at')
+                ->sum('amount');
+
+            $balance = $totalIssue - $totalSpend;
+
+            return response()->json([
+                'total_issue' => $totalIssue,
+                'total_spend' => $totalSpend,
+                'balance' => $balance
+            ]);
+        } catch (Exception $ex) {
+            return $ex;
+        }
+    }
+
     public function pettyCashAdd(Request $request)
     {
         try {
@@ -90,7 +115,6 @@ class PettyCashRepository implements PettyCashInterface
             $spend = PettyCashSpends::find($request->cash_spend_id);
             if (isset($spend)) {
                 $spend->delete();
-
                 return "Delete Successfully";
             } else {
                 return "not found petty cash spend data";

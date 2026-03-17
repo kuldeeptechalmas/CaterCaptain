@@ -13,6 +13,11 @@ class PettyCashController extends Controller
     {
         $this->Repo = $Repo;
     }
+    public function pettyCashDashboard(Request $request)
+    {
+        $data = $this->Repo->pettyCashDashboard($request);
+        return $data;
+    }
     public function pettyCashAdd(Request $request)
     {
         $data = $this->Repo->pettyCashAdd($request);

@@ -44,4 +44,19 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/petty-cash-report', [AuthController::class, 'pettyCashReport'])->name('petty-cash.report');
     Route::get('/petty-cash-report/pdf', [AuthController::class, 'pettyCashReportPdf'])->name('petty-cash.report.pdf');
     Route::get('/petty-cash-report/pdf/download', [AuthController::class, 'pettyCashReportPdfDownload'])->name('petty-cash.report.pdf.download');
+    Route::post('/petty-cash-issue', [AuthController::class, 'pettyCashIssueStore'])->name('petty-cash.issue.store');
+
+    Route::get('/hq-profile', [AuthController::class, 'hqProfile'])->name('hq.profile');
+    Route::get('/gst-settings', [AuthController::class, 'gstSettings'])->name('gst.settings');
+    Route::get('/material-pricing', [AuthController::class, 'materialPricing'])->name('material.pricing');
+    Route::get('/material-pricing/pdf/download', [AuthController::class, 'materialPricingPdfDownload'])->name('material.pricing.pdf.download');
+    Route::get('/staff-management', [AuthController::class, 'staffManagement'])->name('staff.management');
+    Route::get('/inventory', [AuthController::class, 'inventoryManagement'])->name('inventory.management');
+    Route::get('/inventory/pdf', [AuthController::class, 'inventoryManagementPdf'])->name('inventory.management.pdf');
+    Route::get('/inventory/pdf/download', [AuthController::class, 'inventoryManagementPdfDownload'])->name('inventory.management.pdf.download');
+
+    Route::get('/units', [AuthController::class, 'unitsIndex'])->name('masters.units');
+    Route::get('/categories', [AuthController::class, 'categoriesIndex'])->name('masters.categories');
+    Route::get('/dishes', [AuthController::class, 'dishesIndex'])->name('masters.dishes');
+    Route::get('/event-types', [AuthController::class, 'eventTypesIndex'])->name('masters.event-types');
 });

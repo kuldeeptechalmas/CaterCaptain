@@ -32,7 +32,6 @@ class AuthController extends Controller
     public function dashboard(): View
     {
         $raw_material = RawMaterial::where('is_active', true)->get();
-        // dd('boom');
         return view('dashboard', ['raw_material' => $raw_material]);
     }
 
@@ -344,13 +343,48 @@ class AuthController extends Controller
     public function pettyCashReport(Request $request)
     {
         $issues = $this->buildPettyCashReportQuery($request)
-            ->orderByDesc('petty_cash_issues.issue_date')
+            ->orderByDesc('petty_cash_issues.created_at')
             ->get();
+
+        $spends = $this->buildPettyCashSpendReportQuery($request)
+            ->orderByDesc('petty_cash_spends.created_at')
+            ->get();
+
+        $entries = $issues->map(function ($issue) {
+            return (object) [
+                'id' => $issue->id,
+                'type' => 'Issue',
+                'captain_name' => $issue->captain_name,
+                'amount' => $issue->amount,
+                'note' => 'Petty cash issued',
+                'entry_date' => $issue->issue_date,
+                'created_by_name' => $issue->created_by_name,
+                'created_at' => $issue->created_at,
+            ];
+        })->merge($spends->map(function ($spend) {
+            return (object) [
+                'id' => $spend->id,
+                'type' => 'Spend',
+                'captain_name' => $spend->captain_name,
+                'amount' => $spend->amount,
+                'note' => $spend->note,
+                'entry_date' => $spend->spend_date,
+                'created_by_name' => null,
+                'created_at' => $spend->created_at,
+            ];
+        }))->sortByDesc('created_at')->values();
+
+        $issueTotal = $issues->sum('amount');
+        $spendTotal = $spends->sum('amount');
+        $totalBalance = $issueTotal - $spendTotal;
 
         $users = DB::table('users')->where('is_active', true)->orderBy('first_name')->get();
 
         return view('auth.petty-cash-report', [
-            'issues' => $issues,
+            'entries' => $entries,
+            'issueTotal' => $issueTotal,
+            'spendTotal' => $spendTotal,
+            'totalBalance' => $totalBalance,
             'users' => $users,
         ]);
     }
@@ -364,11 +398,46 @@ class AuthController extends Controller
         }
 
         $issues = $this->buildPettyCashReportQuery($request)
-            ->orderByDesc('petty_cash_issues.issue_date')
+            ->orderByDesc('petty_cash_issues.created_at')
             ->get();
 
+        $spends = $this->buildPettyCashSpendReportQuery($request)
+            ->orderByDesc('petty_cash_spends.created_at')
+            ->get();
+
+        $entries = $issues->map(function ($issue) {
+            return (object) [
+                'id' => $issue->id,
+                'type' => 'Issue',
+                'captain_name' => $issue->captain_name,
+                'amount' => $issue->amount,
+                'note' => 'Petty cash issued',
+                'entry_date' => $issue->issue_date,
+                'created_by_name' => $issue->created_by_name,
+                'created_at' => $issue->created_at,
+            ];
+        })->merge($spends->map(function ($spend) {
+            return (object) [
+                'id' => $spend->id,
+                'type' => 'Spend',
+                'captain_name' => $spend->captain_name,
+                'amount' => $spend->amount,
+                'note' => $spend->note,
+                'entry_date' => $spend->spend_date,
+                'created_by_name' => null,
+                'created_at' => $spend->created_at,
+            ];
+        }))->sortByDesc('created_at')->values();
+
+        $issueTotal = $issues->sum('amount');
+        $spendTotal = $spends->sum('amount');
+        $totalBalance = $issueTotal - $spendTotal;
+
         $pdf = $pdfClass::loadView('auth.petty-cash-report-pdf', [
-            'issues' => $issues,
+            'entries' => $entries,
+            'issueTotal' => $issueTotal,
+            'spendTotal' => $spendTotal,
+            'totalBalance' => $totalBalance,
         ]);
 
         return $pdf->stream('petty-cash-report.pdf');
@@ -383,14 +452,389 @@ class AuthController extends Controller
         }
 
         $issues = $this->buildPettyCashReportQuery($request)
-            ->orderByDesc('petty_cash_issues.issue_date')
+            ->orderByDesc('petty_cash_issues.created_at')
             ->get();
 
+        $spends = $this->buildPettyCashSpendReportQuery($request)
+            ->orderByDesc('petty_cash_spends.created_at')
+            ->get();
+
+        $entries = $issues->map(function ($issue) {
+            return (object) [
+                'id' => $issue->id,
+                'type' => 'Issue',
+                'captain_name' => $issue->captain_name,
+                'amount' => $issue->amount,
+                'note' => 'Petty cash issued',
+                'entry_date' => $issue->issue_date,
+                'created_by_name' => $issue->created_by_name,
+                'created_at' => $issue->created_at,
+            ];
+        })->merge($spends->map(function ($spend) {
+            return (object) [
+                'id' => $spend->id,
+                'type' => 'Spend',
+                'captain_name' => $spend->captain_name,
+                'amount' => $spend->amount,
+                'note' => $spend->note,
+                'entry_date' => $spend->spend_date,
+                'created_by_name' => null,
+                'created_at' => $spend->created_at,
+            ];
+        }))->sortByDesc('created_at')->values();
+
+        $issueTotal = $issues->sum('amount');
+        $spendTotal = $spends->sum('amount');
+        $totalBalance = $issueTotal - $spendTotal;
+
         $pdf = $pdfClass::loadView('auth.petty-cash-report-pdf', [
-            'issues' => $issues,
+            'entries' => $entries,
+            'issueTotal' => $issueTotal,
+            'spendTotal' => $spendTotal,
+            'totalBalance' => $totalBalance,
         ]);
 
         return $pdf->download('petty-cash-report.pdf');
+    }
+
+    public function pettyCashIssueStore(Request $request)
+    {
+        $data = $request->validate([
+            'captain_id' => ['required', 'integer', 'exists:users,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'issue_date' => ['required', 'date'],
+        ]);
+
+        DB::table('petty_cash_issues')->insert([
+            'captain_id' => $data['captain_id'],
+            'amount' => $data['amount'],
+            'issue_date' => $data['issue_date'],
+            'created_by' => Auth::id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('petty-cash.report')->with('status', 'Petty cash issue recorded.');
+    }
+
+    public function hqProfile()
+    {
+        $hq_data = DB::table('hq_details')->get();
+        return view('hq-profile', compact('hq_data'));
+    }
+
+    public function gstSettings()
+    {
+        $hq_data = DB::table('hq_details')->get();
+        return view('gst-settings', compact('hq_data'));
+    }
+
+    public function materialPricing(Request $request)
+    {
+        $materials = $this->buildMaterialReportQuery($request)
+            ->orderBy('raw_materials.name')
+            ->get();
+
+        return view('material-pricing', [
+            'materials' => $materials,
+        ]);
+    }
+
+    public function staffManagement()
+    {
+        $staff = DB::table('staff')
+            ->leftJoin('staff_roles', 'staff.staff_role_id', '=', 'staff_roles.id')
+            ->select('staff.*', 'staff_roles.name as role_name')
+            ->orderBy('staff.name')
+            ->get();
+
+        $totalStaff = $staff->count();
+        $activeStaff = $staff->where('is_active', true)->count();
+
+        return view('staff-management', [
+            'staff' => $staff,
+            'totalStaff' => $totalStaff,
+            'activeStaff' => $activeStaff,
+        ]);
+    }
+
+    public function materialPricingPdfDownload(Request $request)
+    {
+        $pdfClass = '\\Barryvdh\\DomPDF\\Facade\\Pdf';
+
+        if (!class_exists($pdfClass)) {
+            return response('PDF not configured. Please install laravel-dompdf.', 501);
+        }
+
+        $materials = $this->buildMaterialReportQuery($request)
+            ->orderBy('raw_materials.name')
+            ->get();
+
+        $pdf = $pdfClass::loadView('material-pricing-pdf', [
+            'materials' => $materials,
+        ]);
+
+        return $pdf->download('material-pricing.pdf');
+    }
+
+    public function inventoryManagement()
+    {
+        $q = trim((string) request('q'));
+        $selectedMaterialId = (int) request('material_id');
+
+        $latestPricingIds = DB::table('material_pricing')
+            ->select('raw_material_id', DB::raw('MAX(id) as latest_id'))
+            ->whereNull('deleted_at')
+            ->groupBy('raw_material_id');
+
+        $materialsQuery = DB::table('raw_materials')
+            ->leftJoin('units', 'raw_materials.unit_id', '=', 'units.id')
+            ->leftJoinSub($latestPricingIds, 'latest_price_ids', function ($join) {
+                $join->on('raw_materials.id', '=', 'latest_price_ids.raw_material_id');
+            })
+            ->leftJoin('material_pricing as latest_price', 'latest_price.id', '=', 'latest_price_ids.latest_id')
+            ->select(
+                'raw_materials.*',
+                'units.symbol as unit_symbol',
+                'latest_price.price_unit as price_unit',
+                'latest_price.price_kg as price_kg',
+                'latest_price.price_litre as price_litre',
+                'latest_price.price_piece as price_piece',
+                DB::raw("CASE raw_materials.unit_id
+                    WHEN 1 THEN latest_price.price_kg
+                    WHEN 2 THEN latest_price.price_unit
+                    WHEN 3 THEN latest_price.price_litre
+                    WHEN 4 THEN latest_price.price_piece
+                    ELSE latest_price.price_unit
+                END as material_price")
+            )
+            ->orderBy('raw_materials.name');
+
+        if ($q !== '') {
+            $materialsQuery->where('raw_materials.name', 'like', '%' . $q . '%');
+        }
+
+        $materials = $materialsQuery->get()
+            ->map(function ($material) {
+                $min = (float) $material->min_qty;
+                $qty = (float) $material->qty;
+                $level = $min > 0 ? ($qty / $min) * 100 : null;
+                if ($min > 0 && $qty <= $min * 0.5) {
+                    $status = 'Critical';
+                } elseif ($min > 0 && $qty < $min) {
+                    $status = 'Low';
+                } else {
+                    $status = 'Good';
+                }
+
+                $material->stock_level = $level;
+                $material->status_label = $status;
+
+                return $material;
+            });
+
+        $totalMaterials = $materials->count();
+        $goodCount = $materials->where('status_label', 'Good')->count();
+        $lowCount = $materials->where('status_label', 'Low')->count();
+        $criticalCount = $materials->where('status_label', 'Critical')->count();
+
+        $materialOptions = DB::table('raw_materials')
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
+        $selectedMaterial = null;
+        $moments = collect();
+        if ($selectedMaterialId > 0) {
+            $selectedMaterial = $this->buildMaterialReportQuery(request())
+                ->where('raw_materials.id', $selectedMaterialId)
+                ->first();
+
+            $moments = DB::table('raw_material_moment')
+                ->leftJoin('raw_materials', 'raw_material_moment.raw_material_id', '=', 'raw_materials.id')
+                ->leftJoin('units', 'raw_material_moment.unit_id', '=', 'units.id')
+                ->leftJoin('kitchens as from_kitchen', 'raw_material_moment.from_kitchen_id', '=', 'from_kitchen.id')
+                ->leftJoin('kitchens as to_kitchen', 'raw_material_moment.to_kitchen_id', '=', 'to_kitchen.id')
+                ->leftJoin('hq_details as from_hq', 'raw_material_moment.from_hq_id', '=', 'from_hq.id')
+                ->leftJoin('hq_details as to_hq', 'raw_material_moment.to_hq_id', '=', 'to_hq.id')
+                ->select(
+                    'raw_material_moment.*',
+                    'units.symbol as unit_symbol',
+                    'from_kitchen.name as from_kitchen_name',
+                    'to_kitchen.name as to_kitchen_name',
+                    'from_hq.value as from_hq_value',
+                    'to_hq.value as to_hq_value'
+                )
+                ->where('raw_material_moment.raw_material_id', $selectedMaterialId)
+                ->orderByDesc('raw_material_moment.created_at')
+                ->get();
+        }
+
+        return view('inventory-management', [
+            'materials' => $materials,
+            'totalMaterials' => $totalMaterials,
+            'goodCount' => $goodCount,
+            'lowCount' => $lowCount,
+            'criticalCount' => $criticalCount,
+            'materialOptions' => $materialOptions,
+            'selectedMaterialId' => $selectedMaterialId,
+            'selectedMaterial' => $selectedMaterial,
+            'moments' => $moments,
+            'q' => $q,
+        ]);
+    }
+
+    public function inventoryManagementPdf(Request $request)
+    {
+        $pdfClass = '\\Barryvdh\\DomPDF\\Facade\\Pdf';
+
+        if (!class_exists($pdfClass)) {
+            return response('PDF not configured. Please install laravel-dompdf.', 501);
+        }
+
+        $selectedMaterialId = (int) $request->material_id;
+        if ($selectedMaterialId <= 0) {
+            return response('Select a material to export.', 400);
+        }
+
+        $selectedMaterial = $this->buildMaterialReportQuery($request)
+            ->where('raw_materials.id', $selectedMaterialId)
+            ->first();
+
+        $moments = DB::table('raw_material_moment')
+            ->leftJoin('units', 'raw_material_moment.unit_id', '=', 'units.id')
+            ->leftJoin('kitchens as from_kitchen', 'raw_material_moment.from_kitchen_id', '=', 'from_kitchen.id')
+            ->leftJoin('kitchens as to_kitchen', 'raw_material_moment.to_kitchen_id', '=', 'to_kitchen.id')
+            ->leftJoin('hq_details as from_hq', 'raw_material_moment.from_hq_id', '=', 'from_hq.id')
+            ->leftJoin('hq_details as to_hq', 'raw_material_moment.to_hq_id', '=', 'to_hq.id')
+            ->select(
+                'raw_material_moment.*',
+                'units.symbol as unit_symbol',
+                'from_kitchen.name as from_kitchen_name',
+                'to_kitchen.name as to_kitchen_name',
+                'from_hq.value as from_hq_value',
+                'to_hq.value as to_hq_value'
+            )
+            ->where('raw_material_moment.raw_material_id', $selectedMaterialId)
+            ->orderByDesc('raw_material_moment.created_at')
+            ->get();
+
+        $pdf = $pdfClass::loadView('inventory-management-pdf', [
+            'selectedMaterial' => $selectedMaterial,
+            'moments' => $moments,
+        ]);
+
+        return $pdf->stream('inventory-management.pdf');
+    }
+
+    public function inventoryManagementPdfDownload(Request $request)
+    {
+        $pdfClass = '\\Barryvdh\\DomPDF\\Facade\\Pdf';
+
+        if (!class_exists($pdfClass)) {
+            return response('PDF not configured. Please install laravel-dompdf.', 501);
+        }
+
+        $selectedMaterialId = (int) $request->material_id;
+        if ($selectedMaterialId <= 0) {
+            return response('Select a material to export.', 400);
+        }
+
+        $selectedMaterial = $this->buildMaterialReportQuery($request)
+            ->where('raw_materials.id', $selectedMaterialId)
+            ->first();
+
+        $moments = DB::table('raw_material_moment')
+            ->leftJoin('units', 'raw_material_moment.unit_id', '=', 'units.id')
+            ->leftJoin('kitchens as from_kitchen', 'raw_material_moment.from_kitchen_id', '=', 'from_kitchen.id')
+            ->leftJoin('kitchens as to_kitchen', 'raw_material_moment.to_kitchen_id', '=', 'to_kitchen.id')
+            ->leftJoin('hq_details as from_hq', 'raw_material_moment.from_hq_id', '=', 'from_hq.id')
+            ->leftJoin('hq_details as to_hq', 'raw_material_moment.to_hq_id', '=', 'to_hq.id')
+            ->select(
+                'raw_material_moment.*',
+                'units.symbol as unit_symbol',
+                'from_kitchen.name as from_kitchen_name',
+                'to_kitchen.name as to_kitchen_name',
+                'from_hq.value as from_hq_value',
+                'to_hq.value as to_hq_value'
+            )
+            ->where('raw_material_moment.raw_material_id', $selectedMaterialId)
+            ->orderByDesc('raw_material_moment.created_at')
+            ->get();
+
+        $pdf = $pdfClass::loadView('inventory-management-pdf', [
+            'selectedMaterial' => $selectedMaterial,
+            'moments' => $moments,
+        ]);
+
+        return $pdf->download('inventory-management.pdf');
+    }
+
+    public function unitsIndex(Request $request)
+    {
+        $q = trim((string) $request->q);
+        $units = DB::table('units')
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where('name', 'like', '%' . $q . '%')
+                    ->orWhere('symbol', 'like', '%' . $q . '%');
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('masters.units', [
+            'units' => $units,
+            'q' => $q,
+        ]);
+    }
+
+    public function categoriesIndex(Request $request)
+    {
+        $q = trim((string) $request->q);
+        $categories = DB::table('categories')
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where('name', 'like', '%' . $q . '%');
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('masters.categories', [
+            'categories' => $categories,
+            'q' => $q,
+        ]);
+    }
+
+    public function dishesIndex(Request $request)
+    {
+        $q = trim((string) $request->q);
+        $dishes = DB::table('dishes')
+            ->leftJoin('categories', 'dishes.category_id', '=', 'categories.id')
+            ->select('dishes.*', 'categories.name as category_name')
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where('dishes.dish', 'like', '%' . $q . '%');
+            })
+            ->orderBy('dishes.dish')
+            ->get();
+
+        return view('masters.dishes', [
+            'dishes' => $dishes,
+            'q' => $q,
+        ]);
+    }
+
+    public function eventTypesIndex(Request $request)
+    {
+        $q = trim((string) $request->q);
+        $eventTypes = DB::table('event_types')
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where('name', 'like', '%' . $q . '%');
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('masters.event-types', [
+            'eventTypes' => $eventTypes,
+            'q' => $q,
+        ]);
     }
 
     private function buildMaterialReportQuery(Request $request)
@@ -496,6 +940,46 @@ class AuthController extends Controller
 
         if ($request->filled('amount_max')) {
             $query->where('petty_cash_issues.amount', '<=', (float) $request->amount_max);
+        }
+
+        return $query;
+    }
+
+    private function buildPettyCashSpendReportQuery(Request $request)
+    {
+        $query = DB::table('petty_cash_spends')
+            ->leftJoin('users as captains', 'petty_cash_spends.captain_id', '=', 'captains.id')
+            ->select(
+                'petty_cash_spends.*',
+                DB::raw("TRIM(CONCAT(captains.first_name, ' ', captains.last_name)) as captain_name")
+            );
+
+        if ($request->filled('q')) {
+            $q = trim((string) $request->q);
+            $query->where(function ($builder) use ($q) {
+                $builder->where('captains.first_name', 'like', '%' . $q . '%')
+                    ->orWhere('captains.last_name', 'like', '%' . $q . '%');
+            });
+        }
+
+        if ($request->filled('captain_id')) {
+            $query->where('petty_cash_spends.captain_id', (int) $request->captain_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('petty_cash_spends.spend_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('petty_cash_spends.spend_date', '<=', $request->date_to);
+        }
+
+        if ($request->filled('amount_min')) {
+            $query->where('petty_cash_spends.amount', '>=', (float) $request->amount_min);
+        }
+
+        if ($request->filled('amount_max')) {
+            $query->where('petty_cash_spends.amount', '<=', (float) $request->amount_max);
         }
 
         return $query;

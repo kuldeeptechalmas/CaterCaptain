@@ -1,307 +1,334 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | CaterCaptain</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Manrope', sans-serif;
-            background: #f8fafc;
-            color: #0f172a;
-        }
+@extends('layouts.dashboard')
 
-        .wrap {
-            width: min(1120px, 94%);
-            margin: 22px auto;
-        }
+@section('title', 'Dashboard | CaterCaptain')
 
-        .hero {
-            background: linear-gradient(130deg, #0f766e, #0f172a);
-            color: #e2e8f0;
-            border-radius: 16px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+@section('crumbs')
+    Home / <b>Dashboard</b>
+@endsection
 
-        .hero h1 {
-            margin: 0;
-            font-size: 26px;
-        }
+@push('styles')
+<style>
+    .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .page-head h1 { margin: 0; font-size: 22px; }
+    .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 
-        .hero p {
-            margin: 6px 0 0;
-            color: #cbd5e1;
-        }
+    .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .filters input,
+    .filters select {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font: inherit;
+        font-size: 13px;
+        background: #fff;
+    }
 
-        .btn {
-            border: 0;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font: inherit;
-            font-weight: 700;
-            background: #ef4444;
-            color: #fff;
-            cursor: pointer;
-        }
+    .stat-grid {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .stat {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        display: grid;
+        gap: 6px;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #2563eb;
+    }
+    .stat.orange::before { background: #f97316; }
+    .stat.red::before { background: #ef4444; }
+    .stat.green::before { background: #16a34a; }
+    .stat .title { color: #64748b; font-size: 12px; }
+    .stat .value { font-size: 22px; font-weight: 800; }
+    .stat .meta { color: #64748b; font-size: 12px; }
 
-        .btn-link {
-            display: inline-flex;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font: inherit;
-            font-weight: 700;
-            text-decoration: none;
-            background: #f59e0b;
-            color: #0f172a;
-            margin-right: 8px;
-            border: 0;
-            cursor: pointer;
-        }
+    .grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 14px;
+    }
+    .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+    }
+    .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    .card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+    }
+    .btn-sm {
+        border: 0;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        background: #64748b;
+        color: #fff;
+        cursor: pointer;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    th, td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid #eef2f7;
+    }
+    th { color: #64748b; font-weight: 700; }
 
-        .status {
-            margin-top: 12px;
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 13px;
-            background: #dcfce7;
-            border: 1px solid #86efac;
-            color: #14532d;
-        }
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .pill.pending { background: #fff3cd; color: #b45309; }
+    .pill.approved { background: #dbeafe; color: #1d4ed8; }
+    .pill.received { background: #dcfce7; color: #15803d; }
 
-        .error-box {
-            margin-top: 12px;
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 13px;
-            background: #fee2e2;
-            border: 1px solid #fca5a5;
-            color: #7f1d1d;
-        }
+    .alert-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-radius: 10px;
+        background: #f8fafc;
+        margin-bottom: 8px;
+    }
+    .alert-item .name { font-weight: 700; }
+    .alert-item .sub { color: #64748b; font-size: 12px; }
+    .tag {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+    .tag.low { background: #ffedd5; color: #c2410c; }
 
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            z-index: 1000;
-        }
+    .wide { margin-top: 14px; }
+    .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 10px;
+        width: min(280px, 100%);
+    }
+    .pagination {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: flex-end;
+    }
+    .page-btn {
+        border: 1px solid var(--line);
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #fff;
+        font-size: 12px;
+    }
 
-        .modal.show {
-            display: flex;
-        }
+    @media (max-width: 1100px) {
+        .grid { grid-template-columns: 1fr; }
+        .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
 
-        .modal-card {
-            width: min(480px, 100%);
-            background: #ffffff;
-            border-radius: 14px;
-            border: 1px solid #e2e8f0;
-            padding: 18px;
-        }
+    @media (max-width: 600px) {
+        .stat-grid { grid-template-columns: 1fr; }
+        .page { padding: 16px; }
+    }
+</style>
+@endpush
 
-        .modal-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .modal-title {
-            margin: 0;
-            font-size: 20px;
-        }
-
-        .x-btn {
-            border: 0;
-            background: #e2e8f0;
-            color: #0f172a;
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .modal label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            margin: 10px 0 6px;
-        }
-
-        .modal input {
-            width: 100%;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 10px 12px;
-            font: inherit;
-        }
-
-        .modal input:focus {
-            outline: none;
-            border-color: #0f766e;
-            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
-        }
-
-        .submit-btn {
-            width: 100%;
-            margin-top: 14px;
-            border: 0;
-            border-radius: 10px;
-            padding: 11px;
-            font: inherit;
-            font-weight: 700;
-            color: #fff;
-            background: linear-gradient(90deg, #0f766e, #f59e0b);
-            cursor: pointer;
-        }
-
-        .cards {
-            margin-top: 14px;
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 14px;
-        }
-
-        .k {
-            color: #64748b;
-            font-size: 12px;
-        }
-
-        .v {
-            margin-top: 6px;
-            font-size: 22px;
-            font-weight: 800;
-        }
-
-        @media (max-width: 900px) {
-            .cards {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 560px) {
-            .cards {
-                grid-template-columns: 1fr;
-            }
-
-            .hero h1 {
-                font-size: 22px;
-            }
-        }
-
-    </style>
-</head>
-<body>
-    <div class="wrap">
-        <section class="hero">
-            <div>
-                <h1>CaterCaptain Dashboard</h1>
-                <p>Welcome, {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</p>
-            </div>
-            <div>
-                <button type="button" class="btn-link" id="open-change-password">Change Password</button>
-                <form method="POST" action="{{ route('logout') }}" style="display:inline;">
-                    @csrf
-                    <button type="submit" class="btn">Logout</button>
-                </form>
-            </div>
-        </section>
-
-        @if (session('status'))
-        <div class="status">{{ session('status') }}</div>
-        @endif
-
-        @if ($errors->any())
-        <div class="error-box">{{ $errors->first() }}</div>
-        @endif
-
-        <section class="cards">
-            {{-- {{ $raw_material }} --}}
-            <a href="{{ route('material.report') }}" style="text-decoration-line: none;">
-                <article class="card">
-                    <div class="k">Raw Material Report</div>
-                    <div class="v">All</div>
-                </article>
-            </a>
-
-            <a href="{{ route('petty-cash.report') }}" style="text-decoration-line: none;">
-                <article class="card">
-                    <div class="k">Petty Cash Report</div>
-                    <div class="v">All</div>
-                </article>
-            </a>
-            <article class="card">
-                <div class="k">Pending Requests</div>
-                <div class="v">5</div>
-            </article>
-            <article class="card">
-                <div class="k">Kitchen Alerts</div>
-                <div class="v">3</div>
-            </article>
-        </section>
-    </div>
-
-    <div class="modal {{ $errors->any() ? 'show' : '' }}" id="change-password-modal">
-        <div class="modal-card">
-            <div class="modal-head">
-                <h2 class="modal-title">Change Password</h2>
-                <button type="button" class="x-btn" id="close-change-password">X</button>
-            </div>
-
-            <form method="POST" action="{{ route('change-password.submit') }}" style="margin-right: 20px;">
-                @csrf
-
-                <label for="current_password">Current Password</label>
-                <input id="current_password" type="password" name="current_password">
-
-                <label for="password">New Password</label>
-                <input id="password" type="password" name="password">
-
-                <label for="password_confirmation">Confirm New Password</label>
-                <input id="password_confirmation" type="password" name="password_confirmation">
-
-                <button class="submit-btn" type="submit">Update Password</button>
-            </form>
+@section('content')
+    <div class="page-head">
+        <div>
+            <h1>Dashboard</h1>
+            <p>HQ overview and activity</p>
+        </div>
+        <div class="filters">
+            <input type="date">
+            <span style="align-self:center;color:#94a3b8;">to</span>
+            <input type="date">
+            <select>
+                <option>All Kitchens</option>
+                <option>Kitchen A</option>
+                <option>Kitchen B</option>
+            </select>
         </div>
     </div>
 
-    <script>
-        const modal = document.getElementById('change-password-modal');
-        const openBtn = document.getElementById('open-change-password');
-        const closeBtn = document.getElementById('close-change-password');
+    <section class="stat-grid">
+        <div class="stat">
+            <div class="title">Pending Material Requests</div>
+            <div class="value">5</div>
+            <div class="meta">Awaiting HQ approval</div>
+        </div>
+        <div class="stat orange">
+            <div class="title">Low Stock Items</div>
+            <div class="value">8</div>
+            <div class="meta">Below threshold</div>
+        </div>
+        <div class="stat red">
+            <div class="title">Low Stock Alerts</div>
+            <div class="value">3</div>
+            <div class="meta" style="color:#ef4444;">Critical items</div>
+        </div>
+        <div class="stat green">
+            <div class="title">Active Events</div>
+            <div class="value">12</div>
+            <div class="meta">Confirmed</div>
+        </div>
+    </section>
 
-        openBtn.addEventListener('click', function() {
-            modal.classList.add('show');
-        });
+    <section class="grid">
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">Pending Material Requests</div>
+                <button class="btn-sm">View All</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Request #</th>
+                        <th>Kitchen</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>MR-001</b></td>
+                        <td>Kitchen A</td>
+                        <td>17 Feb 2026</td>
+                        <td>5 items</td>
+                        <td><span class="pill pending">Pending</span></td>
+                        <td>👁️</td>
+                    </tr>
+                    <tr>
+                        <td><b>MR-002</b></td>
+                        <td>Kitchen B</td>
+                        <td>16 Feb 2026</td>
+                        <td>8 items</td>
+                        <td><span class="pill approved">Approved</span></td>
+                        <td>🚚</td>
+                    </tr>
+                    <tr>
+                        <td><b>MR-003</b></td>
+                        <td>Kitchen A</td>
+                        <td>15 Feb 2026</td>
+                        <td>3 items</td>
+                        <td><span class="pill received">Received</span></td>
+                        <td>👁️</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-        closeBtn.addEventListener('click', function() {
-            modal.classList.remove('show');
-        });
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">Low Stock Alerts</div>
+                <button class="btn-sm" style="background:#f97316;">View All Alerts</button>
+            </div>
+            <div class="alert-item">
+                <div>
+                    <div class="name">Cooking Oil</div>
+                    <div class="sub">5 L remaining</div>
+                </div>
+                <span class="tag">Critical</span>
+            </div>
+            <div class="alert-item">
+                <div>
+                    <div class="name">Basmati Rice</div>
+                    <div class="sub">15 kg remaining</div>
+                </div>
+                <span class="tag low">Low</span>
+            </div>
+            <div class="alert-item">
+                <div>
+                    <div class="name">Paneer</div>
+                    <div class="sub">8 kg remaining</div>
+                </div>
+                <span class="tag low">Low</span>
+            </div>
+        </div>
+    </section>
 
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal) {
-                modal.classList.remove('show');
-            }
-        });
-
-    </script>
-</body>
-</html>
+    <section class="card wide">
+        <div class="card-head">
+            <div class="card-title">Recent Activity</div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-sm">View All</button>
+                <button class="btn-sm">Export</button>
+            </div>
+        </div>
+        <div class="search">🔎 <span style="color:#94a3b8;">Search activity...</span></div>
+        <table style="margin-top:10px;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>User</th>
+                    <th>Module</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>2026-02-17</td><td>10:30</td><td>Material Request Created</td><td>Rajesh</td><td>Material Request</td></tr>
+                <tr><td>2026-02-17</td><td>09:15</td><td>Stock In</td><td>Amit</td><td>Inventory</td></tr>
+                <tr><td>2026-02-16</td><td>16:00</td><td>Event Created</td><td>Priya</td><td>Events</td></tr>
+                <tr><td>2026-02-16</td><td>14:30</td><td>Staff Assigned</td><td>Rajesh</td><td>Staff</td></tr>
+                <tr><td>2026-02-15</td><td>11:00</td><td>HQ Profile Updated</td><td>Admin</td><td>HQ Setup</td></tr>
+            </tbody>
+        </table>
+        <div class="pagination" style="margin-top:10px;">
+            <span class="page-btn">Previous</span>
+            <span class="page-btn" style="background:#f97316;color:#fff;border-color:#f97316;">1</span>
+            <span class="page-btn">2</span>
+            <span class="page-btn">Next</span>
+        </div>
+    </section>
+@endsection

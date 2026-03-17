@@ -12,6 +12,9 @@
             --navy: #0f172a;
             --teal: #0f766e;
             --amber: #f59e0b;
+            --orange: #f97316;
+            --peach: #fde7d9;
+            --lav: #e7e6f6;
             --paper: #ffffff;
             --ink: #1e293b;
             --muted: #64748b;
@@ -26,13 +29,22 @@
 
         body {
             margin: 0;
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             color: var(--ink);
             background:
                 radial-gradient(circle at 15% 15%, rgba(15, 118, 110, 0.2), transparent 35%),
                 radial-gradient(circle at 95% -10%, rgba(245, 158, 11, 0.2), transparent 42%),
                 #f8fafc;
             min-height: 100vh;
+        }
+
+        body.login {
+            background: radial-gradient(circle at 20% 10%, var(--peach), transparent 55%),
+                radial-gradient(circle at 85% 90%, var(--lav), transparent 50%),
+                #f6f6fb;
+            display: grid;
+            place-items: center;
+            padding: 24px;
         }
 
         .shell {
@@ -100,6 +112,108 @@
             box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
         }
 
+        .login-card {
+            width: min(520px, 100%);
+            border-radius: 18px;
+            padding: 28px 30px;
+            background: var(--paper);
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 28px 60px rgba(15, 23, 42, 0.15);
+            text-align: center;
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            margin: 0 auto 12px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            background: linear-gradient(135deg, #f97316, #7c3aed);
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .login-logo svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .login-title {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            color: #f97316;
+        }
+
+        .login-sub {
+            margin: 4px 0 18px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .field {
+            text-align: left;
+            margin-bottom: 14px;
+        }
+
+        .input-wrap {
+            display: grid;
+            grid-template-columns: 46px 1fr;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .input-icon {
+            display: grid;
+            place-items: center;
+            background: #f8fafc;
+            border-right: 1px solid var(--line);
+            color: #0f172a;
+            font-size: 18px;
+        }
+
+        .input-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-wrap input {
+            border: 0;
+            margin: 0;
+            padding: 12px 12px;
+            font: inherit;
+            font-size: 14px;
+        }
+
+        .input-wrap input:focus {
+            outline: none;
+        }
+
+        .input-wrap:focus-within {
+            border-color: var(--orange);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+        }
+
+        .login-btn {
+            width: 100%;
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+            background: #f97316;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
         .tabs {
             display: flex;
             gap: 10px;
@@ -154,7 +268,6 @@
         input:focus {
             outline: none;
             border-color: var(--teal);
-            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
         }
 
         .grid-2 {
@@ -221,6 +334,14 @@
         }
 
         @media (max-width: 620px) {
+            body.login {
+                padding: 14px;
+            }
+
+            .login-card {
+                padding: 22px 20px;
+            }
+
             .grid-2 {
                 grid-template-columns: 1fr;
             }
@@ -238,7 +359,20 @@
 
     </style>
 </head>
-<body>
+<body class="{{ (request()->routeIs('logins') || request()->routeIs('register') || request()->routeIs('forgot-password')) ? 'login' : '' }}">
+    @if (request()->routeIs('logins') || request()->routeIs('register') || request()->routeIs('forgot-password'))
+    <main class="login-card">
+        @if (session('status'))
+        <div class="msg ok">{{ session('status') }}</div>
+        @endif
+
+        @if ($errors->any())
+        <div class="msg err">{{ $errors->first() }}</div>
+        @endif
+
+        @yield('content')
+    </main>
+    @else
     <div class="shell">
         <aside class="promo">
             <div>
@@ -276,5 +410,6 @@
             @yield('content')
         </main>
     </div>
+    @endif
 </body>
 </html>

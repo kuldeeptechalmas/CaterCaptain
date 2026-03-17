@@ -44,29 +44,43 @@
     <table>
         <thead>
             <tr>
-                <th>#</th>
-                <th>Captain</th>
+                <th>Date</th>
+                <th>Type</th>
                 <th>Amount</th>
-                <th>Issue Date</th>
-                <th>Created By</th>
-                <th>Created At</th>
+                <th>Note</th>
             </tr>
         </thead>
         <tbody>
-            @forelse ($issues as $issue)
+            @forelse ($entries as $entry)
             <tr>
-                <td>{{ $issue->id }}</td>
-                <td>{{ $issue->captain_name ?: '-' }}</td>
-                <td>{{ number_format((float) $issue->amount, 2) }}</td>
-                <td>{{ $issue->issue_date ? \Illuminate\Support\Carbon::parse($issue->issue_date)->format('d M Y') : '-' }}</td>
-                <td>{{ $issue->created_by_name ?: '-' }}</td>
-                <td>{{ $issue->created_at ? \Illuminate\Support\Carbon::parse($issue->created_at)->format('d M Y') : '-' }}</td>
+                <td>{{ $entry->entry_date ? \Illuminate\Support\Carbon::parse($entry->entry_date)->format('Y-m-d') : '-' }}</td>
+                <td>{{ $entry->type }}</td>
+                <td>{{ number_format((float) $entry->amount, 2) }}</td>
+                <td>{{ $entry->note ?: '-' }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="6">No petty cash issues match your filters.</td>
+                <td colspan="4">No petty cash entries match your filters.</td>
             </tr>
             @endforelse
+        </tbody>
+    </table>
+
+    <div style="margin-top: 14px; font-weight: bold;">Balances</div>
+    <table style="margin-top: 6px;">
+        <thead>
+            <tr>
+                <th>Opening Balance</th>
+                <th>Total Spent</th>
+                <th>Current Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ number_format((float) $issueTotal, 2) }}</td>
+                <td>{{ number_format((float) $spendTotal, 2) }}</td>
+                <td>{{ number_format((float) $totalBalance, 2) }}</td>
+            </tr>
         </tbody>
     </table>
 </body>

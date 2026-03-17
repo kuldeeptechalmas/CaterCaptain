@@ -24,6 +24,7 @@ class RawMaterialRepository implements RawMaterialInterace
             $raw_material = new RawMaterial();
             $raw_material->name = $request->name;
             $raw_material->unit_id = $request->unit_id;
+            $raw_material->hq_id = 1;
             $raw_material->location_id = 1;
             $raw_material->qty = $request->qty;
             $raw_material->min_qty = $request->minqty;

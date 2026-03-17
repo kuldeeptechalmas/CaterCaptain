@@ -12,4 +12,5 @@ interface PettyCashInterface
     public function pettyCashSpend(Request $request);
     public function pettyCashSpendRemove(Request $request);
     public function pettyCashSpendList(Request $request);
+    public function pettyCashDashboard(Request $request);
 }

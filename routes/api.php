@@ -53,6 +53,8 @@ Route::post('/event-raw-material', [EventController::class, 'eventRawMaterial'])
 Route::post('/event-service-remove/{id}', [EventController::class, 'eventServiceRemove']);
 
 // Petty Cash
+Route::post('/petty-cash-dashboard', [PettyCashController::class, 'pettyCashDashboard']);
+
 // Issue
 Route::post('/petty-cash-issue', [PettyCashController::class, 'pettyCashAdd']);
 Route::post('/petty-cash-issue-remove', [PettyCashController::class, 'pettyCashRemove']);
