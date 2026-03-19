@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
@@ -21,6 +23,93 @@ class AuthController extends Controller
     public function __construct(UserRepository $userRepo)
     {
         $this->userRepo = $userRepo;
+    }
+
+    // Dashboard
+    public function dashboard(Request $request)
+    {
+        // Add Roles
+        // Role::create(['name' => 'superadmin']);
+        // Role::create(['name' => 'manager']);
+        // Role::create(['name' => 'catercaptain']);
+
+        // Role::create(['name' => 'superadmin', 'guard_name' => 'web']);
+        // Role::create(['name' => 'manager', 'guard_name' => 'web']);
+        // Role::create(['name' => 'catercaptain', 'guard_name' => 'web']);
+
+        // $role = Role::all();
+        // dd($role->toArray());
+
+        // Permission
+        // Permission::create(['name' => 'full']);
+        // Permission::create(['name' => 'total_revenue']);
+        // Permission::create(['name' => 'total_users']);
+        // Permission::create(['name' => 'total_orders']);
+        // Permission::create(['name' => 'pending_orders']);
+        // Permission::create(['name' => 'low_stock_items']);
+        // Permission::create(['name' => 'assigned_orders']);
+        // Permission::create(['name' => 'today_orders']);
+
+        // Permission::create(['name' => 'full', 'guard_name' => 'web']);
+        // Permission::create(['name' => 'total_revenue', 'guard_name' => 'web']);
+        // Permission::create(['name' => 'total_users', 'guard_name' => 'web']);
+        // Permission::create(['name' => 'total_orders', 'guard_name' => 'web']);
+        // Permission::create(['name' => 'pending_orders', 'guard_name' => 'web']);
+        // Permission::create(['name' => 'low_stock_items', 'guard_name' => 'web']);
+        // Permission::create(['name' => 'assigned_orders', 'guard_name' => 'web']);
+        // Permission::create(['name' => 'today_orders', 'guard_name' => 'web']);
+
+        // $permission = Permission::all();
+        // dd($permission->toArray());
+
+        // Assign Permission to Role
+
+        // $role = Role::findByName('superadmin');
+        // $role->givePermissionTo('full');
+        // $role->givePermissionTo('total_revenue');
+        // $role->givePermissionTo('total_users');
+        // $role->givePermissionTo('total_orders');
+        // $role->givePermissionTo('pending_orders');
+        // $role->givePermissionTo('low_stock_items');
+        // $role->givePermissionTo('assigned_orders');
+        // $role->givePermissionTo('today_orders');
+
+        // $role = Role::findByName('manager');
+        // $role->givePermissionTo('pending_orders');
+        // $role->givePermissionTo('low_stock_items');
+        // $role->givePermissionTo('total_orders');
+
+        // $role = Role::findByName('catercaptain');
+        // $role->givePermissionTo('assigned_orders');
+        // $role->givePermissionTo('today_orders');
+
+
+        // $user = User::find(1);
+        // $request->user()->assignRole('superadmin');
+        // dd($request->user()->hasRole('superadmin'));
+        // dd($user->toArray());
+        // $user = User::find(2);
+        // $user->assignRole('manager');
+        // $user = User::find(3);
+        // $user->assignRole('catercaptain');
+
+        if ($request->user()->hasRole('superadmin')) {
+            return response()->json(
+                ['message' => 'Welcome to the dashboard, Superadmin!']
+            );
+        } elseif ($request->user()->hasRole('manager')) {
+            return response()->json(
+                ['message' => 'Welcome to the dashboard, Manager!']
+            );
+        } elseif ($request->user()->hasRole('catercaptain')) {
+            return response()->json(
+                ['message' => 'Welcome to the dashboard, CaterCaptain!']
+            );
+        } else {
+            return response()->json([
+                'message' => 'Welcome to the dashboard!'
+            ]);
+        }
     }
 
     // Register
@@ -90,6 +179,7 @@ class AuthController extends Controller
         // return response()->json(User::find(2));
     }
 
+    // Forgot Password
     public function forgotPassword(forgotRequest $request)
     {
 
@@ -107,7 +197,7 @@ class AuthController extends Controller
         return ['message' => 'Forgot password successfully.'];
     }
 
-
+    // Logout
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()?->delete();

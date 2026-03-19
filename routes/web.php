@@ -33,6 +33,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
+    Route::get('/notifications', [AuthController::class, 'notifications'])->name('notifications');
     Route::get('/change-password', [AuthController::class, 'showChangePassword'])->name('change-password');
     Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password.submit');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

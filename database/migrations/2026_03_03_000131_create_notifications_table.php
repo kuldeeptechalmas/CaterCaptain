@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('message', 500);
             $table->string('type', 50)->nullable()->index();
+            $table->string('data', 1000)->nullable();
             $table->string('ref_id', 50)->nullable()->index();
             $table->boolean('is_read')->default(false)->index();
             $table->timestamps();

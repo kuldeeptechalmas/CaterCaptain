@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\LowStockEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RawMaterialRequest;
 use App\Http\Requests\RegistrationRequest;
+use App\Models\Notifications;
 use App\Models\RawMaterial;
 use App\Models\User;
 use App\Repository\UserRepository;
@@ -32,7 +35,37 @@ class AuthController extends Controller
     public function dashboard(): View
     {
         $raw_material = RawMaterial::where('is_active', true)->get();
-        return view('dashboard', ['raw_material' => $raw_material]);
+        $raw_material_request = DB::table('material_requests')
+            ->where('status', 'pending')
+            ->count();
+        $raw_material_pending = DB::table('raw_materials')
+            ->whereColumn('qty', '<=', 'min_qty')
+            ->count();
+        $notifications_low_stock = DB::table('notifications')
+            ->where('type', 'low_stock')
+            ->where('user_id', Auth::id())
+            ->count();
+
+        return view('dashboard', [
+            'raw_material' => $raw_material,
+            'raw_material_request' => $raw_material_request,
+            'raw_material_pending' => $raw_material_pending,
+            'notifications_low_stock' => $notifications_low_stock
+        ]);
+    }
+
+    // notifications
+    public function notifications()
+    {
+        $user = Auth::user();
+        $notifications = Notifications::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get();
+        // return response()->json([
+        //     'notifications' => $notifications,
+        // ]);
+        return view('layouts.notifications', ['notifications' => $notifications]);
+        // return $user;
     }
 
     // Login Page
@@ -103,16 +136,6 @@ class AuthController extends Controller
                 ->withErrors($validator)
                 ->withInput();
         }
-
-        $data = [
-            'first_name'  => $request->first_name,
-            'last_name'   => $request->last_name,
-            'email'       => $request->email,
-            'phone'       => $request->phone,
-            'password'    => Hash::make($request->password),
-            'user_number' => $this->generateUserNumber(),
-            'is_active'   => true,
-        ];
 
         $user = new User();
         $user->first_name = $request->first_name;
