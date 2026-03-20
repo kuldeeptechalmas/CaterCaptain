@@ -513,27 +513,54 @@
                 </nav>
             </div>
 
+            @if (Auth::user()->hasRole('superadmin'))
+
             <div class="nav-group">
                 <div class="nav-title">HQ Setup</div>
                 <nav class="nav">
+
                     <a class="{{ request()->routeIs('hq.profile') ? 'active' : '' }}" href="{{ route('hq.profile') }}">HQ Profile</a>
                     <a class="{{ request()->routeIs('gst.settings') ? 'active' : '' }}" href="{{ route('gst.settings') }}">GST Settings</a>
+
                     <a class="{{ request()->routeIs('staff.management') ? 'active' : '' }}" href="{{ route('staff.management') }}">Staff Management</a>
+
                     <a class="{{ request()->routeIs('inventory.management') ? 'active' : '' }}" href="{{ route('inventory.management') }}">Inventory</a>
                     <a class="{{ request()->routeIs('material.pricing') ? 'active' : '' }}" href="{{ route('material.pricing') }}">Material Pricing</a>
                 </nav>
             </div>
 
+            @elseif (Auth::user()->hasRole('manager'))
+
+            <div class="nav-group">
+                <div class="nav-title">Inventory</div>
+                <nav class="nav">
+                    <a class="{{ request()->routeIs('inventory.management') ? 'active' : '' }}" href="{{ route('inventory.management') }}">Inventory</a>
+                    <a class="{{ request()->routeIs('material.pricing') ? 'active' : '' }}" href="{{ route('material.pricing') }}">Material Pricing</a>
+                </nav>
+            </div>
+
+            @elseif (Auth::user()->hasRole('catercaptain'))
+
+            <div class="nav-group">
+                <div class="nav-title">Inventory</div>
+                <nav class="nav">
+                    <a class="{{ request()->routeIs('inventory.management') ? 'active' : '' }}" href="{{ route('inventory.management') }}">Inventory</a>
+                </nav>
+            </div>
+
+            @endif
+
             <div class="nav-group">
                 <div class="nav-title">Operations</div>
                 <nav class="nav">
                     <a href="#">Events</a>
-                    <a href="#">Material Request</a>
+                    <a class="{{ request()->routeIs('material.request') ? 'active' : '' }}" href="{{ route('material.request') }}">Material Request</a>
                     <a class="{{ request()->routeIs('petty-cash.report') ? 'active' : '' }}" href="{{ route('petty-cash.report') }}">Petty Cash</a>
-                    <a href="#">Wastage Entry</a>
+                    <a class="{{ request()->routeIs('wastege.record') ? 'active' : '' }}" href="{{ route('wastege.record') }}">Wastage Entry</a>
                 </nav>
             </div>
 
+            @if (Auth::user()->hasRole('superadmin'))
             <div class="nav-group">
                 <div class="nav-title">Masters</div>
                 <nav class="nav">
@@ -543,6 +570,7 @@
                     <a class="{{ request()->routeIs('masters.event-types') ? 'active' : '' }}" href="{{ route('masters.event-types') }}">Event Types</a>
                 </nav>
             </div>
+            @endif
         </aside>
 
         <div class="content">
@@ -565,7 +593,7 @@
                     </div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button class="chip" type="submit">⎋</button>
+                        <button class="chip" type="submit"><i class="fa-solid fa-arrow-right-from-bracket" style="color: rgb(231, 19, 62);"></i></button>
                     </form>
                 </div>
             </div>
@@ -600,6 +628,7 @@
         </div>
     </div>
     @stack('scripts')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://ajax.googleapis.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>

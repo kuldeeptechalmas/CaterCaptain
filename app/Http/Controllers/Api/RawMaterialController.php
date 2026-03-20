@@ -69,4 +69,17 @@ class RawMaterialController extends Controller
         $result = $this->Repo->rawMaterialRequest($request);
         return $result;
     }
+
+    // Raw Material Request Decision
+    public function rawMaterialRequestDecision(Request $request)
+    {
+        $result = $this->Repo->rawMaterialRequestDecision($request);
+        return $result;
+    }
+
+    public function RawMaterialStock(Request $request)
+    {
+        $result = $this->Repo->RawMaterialStock($request);
+        return $result;
+    }
 }

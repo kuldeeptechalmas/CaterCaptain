@@ -16,4 +16,6 @@ interface RawMaterialInterace
 
     // Raw Material Request Other Kitchen
     public function rawMaterialRequest(Request $request);
+    public function rawMaterialRequestDecision(Request $request);
+    public function RawMaterialStock(Request $request);
 }

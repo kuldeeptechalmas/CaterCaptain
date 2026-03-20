@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('kitchen_id')->constrained('kitchens');
             $table->date('request_date')->index();
-            $table->enum('status', ['pending', 'approved', 'rejected', 'dispatched', 'received'])->index();
+            $table->enum('status', ['pending', 'approved', 'rejected', 'dispatched', 'received', 'reviewed'])->index();
             $table->integer('item_count')->default(0);
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();

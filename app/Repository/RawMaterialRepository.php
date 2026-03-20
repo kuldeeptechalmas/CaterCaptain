@@ -21,29 +21,46 @@ class RawMaterialRepository implements RawMaterialInterace
     public function add(RawMaterialRequest $request)
     {
         try {
-            $raw_material = new RawMaterial();
-            $raw_material->name = $request->name;
-            $raw_material->unit_id = $request->unit_id;
-            $raw_material->hq_id = 1;
-            $raw_material->location_id = 1;
-            $raw_material->qty = $request->qty;
-            $raw_material->min_qty = $request->minqty;
-            $raw_material->is_active = true;
-            $raw_material->save();
+            $raw_material_check = RawMaterial::where('name', $request->name)
+                ->where('location_id', 0)
+                ->where('is_active', true)
+                ->first();
 
-            $raw_material_moment = new RawMaterialMoment();
-            $raw_material_moment->raw_material_id = $raw_material->id;
-            $raw_material_moment->qty = $request->qty;
-            if ($request->status == 'in') {
-                $raw_material_moment->from_hq_id = 1;
-                $raw_material_moment->to_hq_id = 1;
+            if (isset($raw_material_check)) {
+
+                return "Raw material already exists";
+            } else {
+
+                $raw_material = new RawMaterial();
+                $raw_material->name = $request->name;
+                $raw_material->unit_id = $request->unit_id;
+                $raw_material->hq_id = 1;
+                $raw_material->location_id = 0;
+                $raw_material->qty = $request->qty;
+                $raw_material->min_qty = $request->minqty;
+                $raw_material->is_active = true;
+                $raw_material->save();
+
+                if (isset($raw_material)) {
+
+
+                    $raw_material_moment = new RawMaterialMoment();
+                    $raw_material_moment->raw_material_id = $raw_material->id;
+                    $raw_material_moment->qty = $request->qty;
+                    if ($request->status == 'in') {
+                        $raw_material_moment->from_hq_id = 1;
+                        $raw_material_moment->to_hq_id = 1;
+                    }
+                    $raw_material_moment->status = $request->status;
+                    $raw_material_moment->note = $request->status;
+                    $raw_material_moment->unit_id = $request->unit_id;
+                    $raw_material_moment->save();
+
+                    return $raw_material_moment;
+                } else {
+                    return "Not Add Raw material";
+                }
             }
-            $raw_material_moment->status = $request->status;
-            $raw_material_moment->note = $request->status;
-            $raw_material_moment->unit_id = $request->unit_id;
-            $raw_material_moment->save();
-
-            return $raw_material . $raw_material_moment;
         } catch (Exception $ex) {
             return $ex;
         }
@@ -149,11 +166,13 @@ class RawMaterialRepository implements RawMaterialInterace
                 ->where('unit_id', $request->unit_id)
                 ->first();
 
-            if ($raw_material_data->isNotEmpty() && $raw_material_data->qty >= $request->qty) {
+            if ($raw_material_data->qty >= $request->qty) {
+
                 // Raw Material Moment
                 $raw_material_moment = new RawMaterialMoment();
                 $raw_material_moment->raw_material_id = $raw_material_data->id;
                 $raw_material_moment->qty = $request->qty;
+
                 if ($request->status == 'transfer' && $request->to_kitchen_id != 0) {
 
                     $raw_material_moment->from_hq_id = 1;
@@ -194,7 +213,7 @@ class RawMaterialRepository implements RawMaterialInterace
             $raw_material_request->request_date = now();
             $raw_material_request->status = "pending";
             $raw_material_request->item_count = count($request->raw_materials);
-            $raw_material_request->created_by = $request->created_by;
+            $raw_material_request->created_by = $request->user()->id;
             $raw_material_request->save();
 
             if (isset($raw_material_request)) {
@@ -208,10 +227,192 @@ class RawMaterialRepository implements RawMaterialInterace
                     $material_request_lines->save();
                 }
 
-                return $material_request_lines;
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Raw material request submitted successfully',
+                    'data' => $raw_material_request
+                ]);
             } else {
-                return "not found raw material";
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to submit raw material request'
+                ], 400);
             }
+        } catch (Exception $ex) {
+            return $ex;
+        }
+    }
+
+    public function rawMaterialRequestDecision(Request $request)
+    {
+        try {
+
+            $material_request = MaterialRequests::find($request->material_requests_id);
+
+            if ($request->decision == 'approve') {
+
+                $material_request->status = 'approved';
+                $material_request->save();
+
+                $request_status = 'approved';
+            } elseif ($request->decision == 'dispatch') {
+
+                $material_request_lines = $request->material_request_lines;
+
+                foreach ($material_request_lines as $material_request_line) {
+
+                    // Material Reqeust Line Data
+                    $material_request_line_data = MaterialRequestLines::find($material_request_line["id"]);
+                    $material_request_line_data->qty_approved = $material_request_line["qty_approved"];
+
+                    // Raw Material Data
+                    $raw_material_data = RawMaterial::where('id', $material_request_line_data->raw_material_id)->select('unit_id', 'qty')->first();
+
+                    if ($raw_material_data->qty > $material_request_line["qty_approved"]) {
+
+
+                        $price_unit_name = '';
+                        if ($raw_material_data->unit_id == 1) {
+                            $price_unit_name = "price_kg";
+                        } elseif ($raw_material_data->unit_id == 2) {
+                            $price_unit_name = "price_unit";
+                        } elseif ($raw_material_data->unit_id == 3) {
+                            $price_unit_name = "price_litre";
+                        } elseif ($raw_material_data->unit_id == 4) {
+                            $price_unit_name = "price_piece";
+                        }
+
+                        // Price Unit Name
+                        $raw_material_data_price = RawMaterialPrice::where('raw_material_id', $material_request_line_data->raw_material_id)
+                            ->select($price_unit_name)
+                            ->first();
+
+
+                        $material_request_line_data->rate = $raw_material_data_price->$price_unit_name;
+                        $material_request_line_data->amount = $raw_material_data_price->$price_unit_name * $material_request_line_data->qty_approved;
+                        $material_request_line_data->save();
+
+
+                        if (isset($material_request_line_data)) {
+                            $raw_material_datas = RawMaterial::find($material_request_line_data->raw_material_id);
+
+                            $raw_material_moment = new RawMaterialMoment();
+                            $raw_material_moment->raw_material_id = $raw_material_datas->id;
+                            $raw_material_moment->qty = $material_request_line["qty_approved"];
+
+                            $raw_material_moment->from_hq_id = 1;
+                            $raw_material_moment->to_kitchen_id = $material_request->kitchen_id;
+
+                            $raw_material_datas->qty = $raw_material_datas->qty - $material_request_line["qty_approved"];
+                            $raw_material_datas->save();
+
+                            $raw_material_moment->status = 'transfer';
+                            $raw_material_moment->note = 'transfer';
+                            $raw_material_moment->unit_id = $raw_material_datas->unit_id;
+                            $raw_material_moment->save();
+
+                            // New Kitchen Raw Material Data
+                            $raw_material_kitchen_data = new RawMaterial();
+                            $raw_material_kitchen_data->name = $raw_material_datas->name;
+                            $raw_material_kitchen_data->unit_id = $raw_material_datas->unit_id;
+                            $raw_material_kitchen_data->hq_id = 0;
+                            $raw_material_kitchen_data->location_id = $material_request->kitchen_id;
+                            $raw_material_kitchen_data->qty = $material_request_line["qty_approved"];
+                            $raw_material_kitchen_data->min_qty = $raw_material_datas->min_qty;
+                            $raw_material_kitchen_data->is_active = true;
+                            $raw_material_kitchen_data->save();
+
+                            if (isset($raw_material_kitchen_data)) {
+
+                                // Raw Material Moment for Kitchen
+                                $raw_material_moment = new RawMaterialMoment();
+                                $raw_material_moment->raw_material_id = $raw_material_kitchen_data->id;
+                                $raw_material_moment->qty = $material_request_line["qty_approved"];
+
+                                $raw_material_moment->from_hq_id = 0;
+                                $raw_material_moment->to_hq_id = $material_request->kitchen_id;
+
+                                $raw_material_moment->status = 'in';
+                                $raw_material_moment->note = 'in';
+                                $raw_material_moment->unit_id = $raw_material_datas->unit_id;
+                                $raw_material_moment->save();
+
+                                // Raw Material Price for Kitchen
+                                $get_raw_material = RawMaterial::find($raw_material_kitchen_data->id);
+
+                                if ($get_raw_material) {
+
+                                    $raw_material_pricing = new RawMaterialPrice();
+                                    $raw_material_pricing->raw_material_id = $raw_material_kitchen_data->id;
+                                    $raw_material_pricing->unit_id = $get_raw_material->unit_id;
+                                    $raw_material_pricing->pricing_date = now();
+
+                                    // Correct Unit Wise Price
+                                    if ($get_raw_material->unit_id == 1) {
+                                        $raw_material_pricing->price_kg = $request->price;
+                                    } elseif ($get_raw_material->unit_id == 2) {
+                                        $raw_material_pricing->price_unit = $request->price;
+                                    } elseif ($get_raw_material->unit_id == 3) {
+                                        $raw_material_pricing->price_litre = $request->price;
+                                    } elseif ($get_raw_material->unit_id == 4) {
+                                        $raw_material_pricing->price_piece = $request->price;
+                                    }
+                                    $raw_material_pricing->save();
+                                } else {
+                                    return "Not found raw material data ";
+                                }
+                            } else {
+                                return "Not found raw material kitchen data ";
+                            }
+                        } else {
+                            return "Not found raw material line data ";
+                        }
+                    } else {
+                        return "Not enough stock for raw material ID: " . $material_request_line_data->raw_material_id;
+                    }
+                }
+
+                $material_request->status = 'dispatched';
+                $material_request->save();
+
+                $request_status = 'dispatched';
+            } elseif ($request->decision == 'reviewed') {
+
+                $material_request->status = 'reviewed';
+                $material_request->save();
+
+                $request_status = 'reviewed';
+            } elseif ($request->decision == 'reject') {
+
+                $request_status = 'rejected';
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid decision value'
+                ], 400);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Material request decision recorded successfully',
+                'request_status' => $request_status
+            ]);
+        } catch (Exception $ex) {
+            return $ex;
+        }
+    }
+
+    public function RawMaterialStock(Request $request)
+    {
+        try {
+            $raw_material_stock = RawMaterial::where('location_id', $request->location_id)
+                ->where('is_active', true)
+                ->get();
+
+            // ->where('name', $request->raw_material_name)
+            // ->leftJoin('raw_material_moment', 'raw_materials.id', '=', 'raw_material_moment.raw_material_id')
+
+            return $raw_material_stock;
         } catch (Exception $ex) {
             return $ex;
         }

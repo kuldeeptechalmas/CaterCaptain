@@ -49,10 +49,6 @@
     </div>
 
     <button class="login-btn" type="submit">
-        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true">
-            <path d="M14 6h-7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h7" stroke="#fff" stroke-width="2" stroke-linecap="round" />
-            <path d="m11 12-4-4m4 4-4 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(18 0) scale(-1 1)" />
-        </svg>
         Login
     </button>
 

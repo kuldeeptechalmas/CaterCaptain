@@ -270,8 +270,8 @@ Home / <b>Dashboard</b>
 
 <div class="page-head">
     <div>
-        <h1>Dashboard</h1>
-        <p>HQ overview and activity</p>
+        <h1>Material Requests</h1>
+        <p>Kitchen → HQ request flow</p>
     </div>
     <div class="filters">
         <input type="date">
@@ -287,33 +287,29 @@ Home / <b>Dashboard</b>
 
 <section class="stat-grid">
     <div class="stat">
-        <div class="title">Pending Material Requests</div>
-        <div class="value">{{ $raw_material_request }}</div>
+        <div class="title">Pending</div>
+        <div class="value">2</div>
         <div class="meta">Awaiting HQ approval</div>
     </div>
     <div class="stat orange">
-        <div class="title">Low Stock Items</div>
-        <div class="value">{{ $raw_material_pending }}</div>
-        <div class="meta">Below threshold</div>
+        <div class="title">Approved</div>
+        <div class="value">5</div>
+        <div class="meta">Ready to dispatch</div>
     </div>
     <div class="stat red">
-        <div class="title">Low Stock Alerts</div>
-        <div class="value">{{ $notifications_low_stock }}</div>
-        <div class="meta" style="color:#ef4444;">Critical items</div>
+        <div class="title">Dispatched</div>
+        <div class="value">3</div>
+        <div class="meta" style="color:#ef4444;">In transit</div>
     </div>
     <div class="stat green">
-        <div class="title">Active Events</div>
+        <div class="title">Received</div>
         <div class="value">12</div>
-        <div class="meta">Confirmed</div>
+        <div class="meta">Completed</div>
     </div>
 </section>
 
-<section class="grid">
+<section style="padding-top: 21px;">
     <div class="card">
-        <div class="card-head">
-            <div class="card-title">Pending Material Requests</div>
-            <button class="btn-sm">View All</button>
-        </div>
         <table>
             <thead>
                 <tr>
@@ -322,7 +318,6 @@ Home / <b>Dashboard</b>
                     <th>Date</th>
                     <th>Items</th>
                     <th>Status</th>
-                    {{-- <th>Actions</th>    --}}
                 </tr>
             </thead>
             <tbody>
@@ -334,121 +329,11 @@ Home / <b>Dashboard</b>
                     <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}</td>
                     <td>{{ $item->item_count }} items</td>
                     <td><span class="pill pending">{{ $item->status }}</span></td>
-                    {{-- <td>👁️</td> --}}
                 </tr>
                 @endforeach
                 @endif
-                {{-- <tr>
-                    <td><b>MR-002</b></td>
-                    <td>Kitchen B</td>
-                    <td>16 Feb 2026</td>
-                    <td>8 items</td>
-                    <td><span class="pill approved">Approved</span></td>
-                    <td>🚚</td>
-                </tr>
-                <tr>
-                    <td><b>MR-003</b></td>
-                    <td>Kitchen A</td>
-                    <td>15 Feb 2026</td>
-                    <td>3 items</td>
-                    <td><span class="pill received">Received</span></td>
-                    <td>👁️</td>
-                </tr> --}}
             </tbody>
         </table>
-    </div>
-
-    <div class="card">
-        <div class="card-head">
-            <div class="card-title">Low Stock Alerts</div>
-            <button class="btn-sm" style="background:#f97316;">View All Alerts</button>
-        </div>
-        <div class="alert-item">
-            <div>
-                <div class="name">Cooking Oil</div>
-                <div class="sub">5 L remaining</div>
-            </div>
-            <span class="tag">Critical</span>
-        </div>
-        <div class="alert-item">
-            <div>
-                <div class="name">Basmati Rice</div>
-                <div class="sub">15 kg remaining</div>
-            </div>
-            <span class="tag low">Low</span>
-        </div>
-        <div class="alert-item">
-            <div>
-                <div class="name">Paneer</div>
-                <div class="sub">8 kg remaining</div>
-            </div>
-            <span class="tag low">Low</span>
-        </div>
-    </div>
-</section>
-
-<section class="card wide">
-    <div class="card-head">
-        <div class="card-title">Recent Activity</div>
-        <div style="display:flex; gap:8px;">
-            <button class="btn-sm">View All</button>
-            <button class="btn-sm">Export</button>
-        </div>
-    </div>
-    <div class="search">🔎 <span style="color:#94a3b8;">Search activity...</span></div>
-    <table style="margin-top:10px;">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Action</th>
-                <th>User</th>
-                <th>Module</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>2026-02-17</td>
-                <td>10:30</td>
-                <td>Material Request Created</td>
-                <td>Rajesh</td>
-                <td>Material Request</td>
-            </tr>
-            <tr>
-                <td>2026-02-17</td>
-                <td>09:15</td>
-                <td>Stock In</td>
-                <td>Amit</td>
-                <td>Inventory</td>
-            </tr>
-            <tr>
-                <td>2026-02-16</td>
-                <td>16:00</td>
-                <td>Event Created</td>
-                <td>Priya</td>
-                <td>Events</td>
-            </tr>
-            <tr>
-                <td>2026-02-16</td>
-                <td>14:30</td>
-                <td>Staff Assigned</td>
-                <td>Rajesh</td>
-                <td>Staff</td>
-            </tr>
-            <tr>
-                <td>2026-02-15</td>
-                <td>11:00</td>
-                <td>HQ Profile Updated</td>
-                <td>Admin</td>
-                <td>HQ Setup</td>
-            </tr>
-        </tbody>
-    </table>
-    <div class="pagination" style="margin-top:10px;">
-        <span class="page-btn">Previous</span>
-        <span class="page-btn" style="background:#f97316;color:#fff;border-color:#f97316;">1</span>
-        <span class="page-btn">2</span>
-        <span class="page-btn">Next</span>
     </div>
 </section>
 

@@ -45,12 +45,14 @@ class AuthController extends Controller
             ->where('type', 'low_stock')
             ->where('user_id', Auth::id())
             ->count();
+        $material_request = DB::table('material_requests')->get();
 
         return view('dashboard', [
             'raw_material' => $raw_material,
             'raw_material_request' => $raw_material_request,
             'raw_material_pending' => $raw_material_pending,
-            'notifications_low_stock' => $notifications_low_stock
+            'notifications_low_stock' => $notifications_low_stock,
+            'material_request' => $material_request
         ]);
     }
 
@@ -552,6 +554,22 @@ class AuthController extends Controller
         return view('gst-settings', compact('hq_data'));
     }
 
+    public function wastegeRecord()
+    {
+        $waste_records = DB::table('raw_material_moment')
+            ->leftJoin('raw_materials', 'raw_material_moment.raw_material_id', '=', 'raw_materials.id')
+            ->leftJoin('units', 'raw_material_moment.unit_id', '=', 'units.id')
+            ->select('raw_material_moment.*', 'raw_materials.name as material_name', 'units.symbol as unit_symbol')
+            ->where('status', 'wast')
+            ->orderByDesc('raw_material_moment.created_at')
+            ->get();
+        // dd($waste_records->toArray());
+
+        return view('wastege-record', [
+            'waste_records' => $waste_records,
+        ]);
+    }
+
     public function materialPricing(Request $request)
     {
         $materials = $this->buildMaterialReportQuery($request)
@@ -598,6 +616,29 @@ class AuthController extends Controller
         ]);
 
         return $pdf->download('material-pricing.pdf');
+    }
+    public function wastagePdfDownload(Request $request)
+    {
+        $pdfClass = '\\Barryvdh\\DomPDF\\Facade\\Pdf';
+
+        if (!class_exists($pdfClass)) {
+            return response('PDF not configured. Please install laravel-dompdf.', 501);
+        }
+
+        $waste_records = DB::table('raw_material_moment')
+            ->leftJoin('raw_materials', 'raw_material_moment.raw_material_id', '=', 'raw_materials.id')
+            ->leftJoin('units', 'raw_material_moment.unit_id', '=', 'units.id')
+            ->select('raw_material_moment.*', 'raw_materials.name as material_name', 'units.symbol as unit_symbol')
+            ->where('status', 'wast')
+            ->orderByDesc('raw_material_moment.created_at')
+            ->get();
+
+
+        $pdf = $pdfClass::loadView('wastage-pdf', [
+            'waste_records' => $waste_records,
+        ]);
+
+        return $pdf->download('wastage.pdf');
     }
 
     public function inventoryManagement()
@@ -1006,5 +1047,11 @@ class AuthController extends Controller
         }
 
         return $query;
+    }
+
+    public function materialRequest(Request $request)
+    {
+        $material_request = DB::table('material_requests')->get();
+        return view('material-request', compact('material_request'));
     }
 }

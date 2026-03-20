@@ -7,6 +7,7 @@ use App\Models\EventMenuItems;
 use App\Models\Events;
 use App\Models\EventServices;
 use App\Models\RawMaterial;
+use App\Models\RawMaterialMoment;
 use App\Models\WastageEntries;
 use App\Repository\Interface\EventInterface;
 use Carbon\Carbon;
@@ -145,49 +146,22 @@ class EventRepository implements EventInterface
                 ->where('is_active', true)
                 ->first();
 
-
             if (!empty($raw_material_raise)) {
 
                 if ($raw_material_raise->qty >= $raise_requirement) {
 
-                    $raw_material_raise->is_active = false;
+                    $raw_material_raise->qty = $raw_material_raise->qty - $raise_requirement;
                     $raw_material_raise->save();
 
-                    $raw_material = new RawMaterial();
-                    $raw_material->name = $raw_material_raise->name;
-                    $raw_material->unit_id = $raw_material_raise->unit_id;
-                    $raw_material->location_id = $raw_material_raise->location_id;
-                    $raw_material->qty = $raise_requirement;
-                    $raw_material->min_qty = $raw_material_raise->min_qty;
-                    $raw_material->is_active = false;
-                    $raw_material->save();
+                    $raw_material_moment = new RawMaterialMoment();
+                    $raw_material_moment->raw_material_id = $raw_material_raise->id;
+                    $raw_material_moment->qty = $request->qty;
+                    $raw_material_moment->status = 'wast';
+                    $raw_material_moment->note = $request->note;
+                    $raw_material_moment->unit_id = $request->unit;
+                    $raw_material_moment->save();
 
-                    $raw_material2 = new RawMaterial();
-                    $raw_material2->name = $raw_material_raise->name;
-                    $raw_material2->unit_id = $raw_material_raise->unit_id;
-                    $raw_material2->location_id = $raw_material_raise->location_id;
-                    $raw_material2->qty = $raw_material_raise->qty - $raise_requirement;
-                    $raw_material2->min_qty = $raw_material_raise->min_qty;
-                    $raw_material2->is_active = true;
-                    $raw_material2->save();
-
-
-                    $Current_raw_material_raise = RawMaterial::where('name', 'Raise')
-                        ->where('is_active', true)
-                        ->first();
-
-                    $wastage_raw_material = new WastageEntries();
-                    $wastage_raw_material->kitchen_id = $request->kitchen;
-                    $wastage_raw_material->raw_material_id = $raw_material->id;
-                    $wastage_raw_material->unit_id = $request->unit;
-                    $wastage_raw_material->qty = $request->qty;
-                    $wastage_raw_material->wastage_date = now();
-                    $wastage_raw_material->reason = $request->reason;
-                    $wastage_raw_material->note = $request->note;
-                    $wastage_raw_material->created_by = 1;
-                    $wastage_raw_material->save();
-
-                    return $wastage_raw_material;
+                    return "wastage entry successfull";
                 } else {
                     return "your requirement is high";
                 }
